@@ -1,6 +1,4 @@
-## Fluent NUnit Assertions
-
-Fast reflection. Usage:
+## Fast reflection
 
     var value = new FastProperty(propertyInfo).Get(instance).Invoke();
 
