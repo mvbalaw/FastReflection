@@ -1,7 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -9,61 +6,66 @@ namespace FastReflection
 {
 	public class FastProperty<T>
 	{
-		public PropertyInfo Property { get; set; }
-
-		public Func<T, object> GetDelegate;
-		public Action<T, object> SetDelegate;
+		private Func<T, object> _getDelegate;
+		private Action<T, object> _setDelegate;
 
 		public FastProperty(PropertyInfo property)
 		{
-			this.Property = property;
-			InitializeGet();
-			InitializeSet();
+			Property = property;
+			CanRead = property.GetGetMethod() != null;
+			CanWrite = property.GetSetMethod() != null;
+			_getDelegate = (t) =>
+				{
+					InitializeGet();
+					return _getDelegate(t);
+				};
+			_setDelegate = (t, p) =>
+				{
+					InitializeSet();
+					_setDelegate(t, p);
+				};
 		}
 
-		private void InitializeSet()
+		public bool CanRead { get; private set; }
+		public bool CanWrite { get; private set; }
+		public PropertyInfo Property { get; private set; }
+
+		public object Get(T instance)
 		{
-			var setMethod = this.Property.GetSetMethod();
-			if (setMethod != null)
-			{
-				var instance = Expression.Parameter(typeof(T), "instance");
-				var value = Expression.Parameter(typeof(object), "value");
-				UnaryExpression valueCast = (!this.Property.PropertyType.IsValueType)
-												? Expression.TypeAs(value, this.Property.PropertyType)
-												: Expression.Convert(value, this.Property.PropertyType);
-				this.SetDelegate =
-					Expression.Lambda<Action<T, object>>(Expression.Call(instance, setMethod, valueCast),
-														 new ParameterExpression[] { instance, value }).Compile();
-			}
+			return _getDelegate(instance);
 		}
 
 		private void InitializeGet()
 		{
-			var getMethod = this.Property.GetGetMethod();
+			var getMethod = Property.GetGetMethod();
 			if (getMethod != null)
 			{
 				var instance = Expression.Parameter(typeof(T), "instance");
-				this.GetDelegate =
+				_getDelegate =
 					Expression.Lambda<Func<T, object>>(Expression.TypeAs(Expression.Call(instance, getMethod), typeof(object)),
-													   instance).Compile();
+					                                   instance).Compile();
 			}
 		}
 
-		public object Get(T instance)
+		private void InitializeSet()
 		{
-			return this.GetDelegate(instance);
-		}
-
-		public bool CanWrite
-		{
-			get { return SetDelegate != null; }
+			var setMethod = Property.GetSetMethod();
+			if (setMethod != null)
+			{
+				var instance = Expression.Parameter(typeof(T), "instance");
+				var value = Expression.Parameter(typeof(object), "value");
+				var valueCast = (!Property.PropertyType.IsValueType)
+				                	? Expression.TypeAs(value, Property.PropertyType)
+				                	: Expression.Convert(value, Property.PropertyType);
+				_setDelegate =
+					Expression.Lambda<Action<T, object>>(Expression.Call(instance, setMethod, valueCast),
+					                                     new[] { instance, value }).Compile();
+			}
 		}
 
 		public void Set(T instance, object value)
 		{
-			this.SetDelegate(instance, value);
+			_setDelegate(instance, value);
 		}
-
-
 	}
 }

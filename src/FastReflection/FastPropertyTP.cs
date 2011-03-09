@@ -1,65 +1,68 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Reflection;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace FastReflection
 {
 	public class FastProperty<T, P>
 	{
-		public PropertyInfo Property { get; set; }
-
-		public Func<T, P> GetDelegate;
-		public Action<T, P> SetDelegate;
+		private Func<T, P> _getDelegate;
+		private Action<T, P> _setDelegate;
 
 		public FastProperty(PropertyInfo property)
 		{
-			this.Property = property;
-			InitializeGet();
-			InitializeSet();
+			Property = property;
+			CanRead = property.GetGetMethod() != null;
+			CanWrite = property.GetSetMethod() != null;
+			_getDelegate = (t) =>
+				{
+					InitializeGet();
+					return _getDelegate(t);
+				};
+			_setDelegate = (t, p) =>
+				{
+					InitializeSet();
+					_setDelegate(t, p);
+				};
 		}
 
-		private void InitializeSet()
+		public bool CanRead { get; private set; }
+		public bool CanWrite { get; private set; }
+		public PropertyInfo Property { get; private set; }
+
+		public P Get(T instance)
 		{
-			var setMethod = this.Property.GetSetMethod();
-			if (setMethod != null)
-			{
-				var instance = Expression.Parameter(typeof(T), "instance");
-				var value = Expression.Parameter(typeof(P), "value");
-				this.SetDelegate =
-					Expression.Lambda<Action<T, P>>(Expression.Call(instance, setMethod, value),
-													new ParameterExpression[] { instance, value }).Compile();
-			}
-			// roughly looks like Action<T,P> a = new Action<T,P>((instance,value) => instance.set_Property(value));
+			return _getDelegate(instance);
 		}
 
 		private void InitializeGet()
 		{
-			var getMethod = this.Property.GetGetMethod();
+			var getMethod = Property.GetGetMethod();
 			if (getMethod != null)
 			{
 				var instance = Expression.Parameter(typeof(T), "instance");
-				this.GetDelegate = Expression.Lambda<Func<T, P>>(Expression.Call(instance, getMethod), instance).Compile();
+				_getDelegate = Expression.Lambda<Func<T, P>>(Expression.Call(instance, getMethod), instance).Compile();
 			}
 			// roughly looks like Func<T,P> getter = instance => return instance.get_Property();
 		}
 
-		public P Get(T instance)
+		private void InitializeSet()
 		{
-			return this.GetDelegate(instance);
-		}
-
-		public bool CanWrite
-		{
-			get { return SetDelegate != null; }
+			var setMethod = Property.GetSetMethod();
+			if (setMethod != null)
+			{
+				var instance = Expression.Parameter(typeof(T), "instance");
+				var value = Expression.Parameter(typeof(P), "value");
+				_setDelegate =
+					Expression.Lambda<Action<T, P>>(Expression.Call(instance, setMethod, value),
+					                                new[] { instance, value }).Compile();
+			}
+			// roughly looks like Action<T,P> a = new Action<T,P>((instance,value) => instance.set_Property(value));
 		}
 
 		public void Set(T instance, P value)
 		{
-			this.SetDelegate(instance, value);
+			_setDelegate(instance, value);
 		}
 	}
-
 }

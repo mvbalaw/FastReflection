@@ -1,8 +1,8 @@
 ## Fast reflection
 
-    var value = new FastProperty(propertyInfo).Get(instance).Invoke();
+    var value = new FastProperty(propertyInfo).Get(instance);
 
-    new FastProperty(propertyInfo).Set(instance, value).Invoke();
+    new FastProperty(propertyInfo).Set(instance, value);
 
 	
 ## License		
