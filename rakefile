@@ -1,0 +1,106 @@
+require 'albacore'
+
+PRODUCT_NAME = "FastReflection"
+COMPILE_TARGET = ENV['compile_mode'].nil? ? "Debug" : ENV['compile_mode']
+CLR_TOOLS_VERSION = "v4.0.30319"
+DEFAULT_BUILD_NUMBER = "1.0.0"
+COMPANY_NAME = "Microsoft"
+COPYRIGHT = "Copyright (c) Microsoft 2008"
+ARTIFACTS = File.expand_path("dist")
+
+nunit_cmd = "tools/NUnit/bin/nunit-console.exe"
+
+beginning = Time.now
+
+props = { :stage => File.expand_path("build"), :artifacts => ARTIFACTS }
+
+desc "** Default **"
+task :default => [:build, :archive] do
+  puts "Build Succeeded - time elapsed: #{Time.now - beginning} seconds"
+end
+
+desc "Creates CommonAssemblyInfo.cs file"
+assemblyinfo :assemblyinfo do |asm| 
+  build_number = get_build_number
+  build_number_with_hash = get_build_number_with_hash
+  asm.product_name = PRODUCT_NAME
+  asm.version = build_number
+  asm.file_version = build_number
+  asm.trademark = build_number_with_hash
+  asm.company_name = COMPANY_NAME
+  asm.copyright = COPYRIGHT 
+  asm.output_file = "src/CommonAssemblyInfo.cs"
+end
+
+desc "Builds the #{PRODUCT_NAME} solution"
+msbuild :build => [:clean, :assemblyinfo] do |msb|
+  puts "Compiling #{PRODUCT_NAME} in #{COMPILE_TARGET} mode..."
+  msb.properties :configuration => COMPILE_TARGET
+  msb.targets :Clean, :Build
+  msb.solution = "src/Reflection.sln"
+  msb.verbosity = "quiet"
+  sleep 1
+  puts "Copying files from bin folders to the build folder (#{props[:stage]})..."
+  copy_output_files "src/#{PRODUCT_NAME}/bin/#{COMPILE_TARGET}", "*.{dll,pdb,exe}", props[:stage]
+end
+
+desc "Prepares the working directory for a new build"
+task :clean do
+  FileUtils.rm_rf props[:stage]  
+  # work around nasty latency issue where folder still exists for a short while after it is removed
+  wait_for { !Dir.exists?(props[:stage]) }
+  Dir.mkdir props[:stage]
+  Dir.mkdir props[:artifacts] unless Dir.exists?(props[:artifacts])
+end
+
+desc "Zips up the build results"
+zip :archive do |zip|
+  puts "Zipping up the build folder and copying to artifacts folder (#{props[:artifacts]})..."
+  mkdir props[:artifacts] unless Dir.exists?(props[:artifacts])
+  build_number = get_build_number
+  zip.directories_to_zip = [props[:stage]]
+  zip.output_file = "#{PRODUCT_NAME}_#{build_number}.#{COMPILE_TARGET}.zip"
+  zip.output_path = [props[:artifacts]]
+  puts "Artifacts are available in the artifact folder: #{props[:artifacts]}"
+end
+
+def copy_output_files(fromDir, filePattern, outDir)
+  Dir.glob(File.join(fromDir, filePattern)){|file| 		
+	copy(file, outDir) if File.file?(file)
+  } 
+end
+
+def get_build_number
+  begin
+    gittag = `git describe --long`.chomp # looks something like v0.1.0-63-g3f10c2e
+    parts = gittag.split("-")
+    base_version = parts[0].gsub("v","")
+    git_build_revision = parts[1]
+    git_short_hash = parts[2]
+    build_number = "#{base_version}.#{git_build_revision}"	
+  rescue
+    build_number = DEFAULT_BUILD_NUMBER
+  end
+end
+
+def get_build_number_with_hash
+  begin
+    gittag = `git describe --long`.chomp # looks something like v0.1.0-63-g3f10c2e
+    parts = gittag.split("-")
+    base_version = parts[0].gsub("v","")
+    git_build_revision = parts[1]
+    git_short_hash = parts[2]
+    build_number_with_hash = "#{base_version}.#{git_build_revision}-#{git_short_hash}"	
+  rescue
+    build_number_with_hash = DEFAULT_BUILD_NUMBER
+  end
+end
+
+def wait_for(&block) 
+  checks = 0
+  until block.call || checks >10 
+    sleep 0.5
+    checks += 1
+  end
+  raise 'waitfor timeout expired' if checks > 10
+end
