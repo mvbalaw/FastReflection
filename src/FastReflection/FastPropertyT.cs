@@ -14,7 +14,7 @@ namespace FastReflection
 			Property = property;
 			CanRead = property.GetGetMethod() != null;
 			CanWrite = property.GetSetMethod() != null;
-			_getDelegate = (t) =>
+			_getDelegate = t =>
 				{
 					InitializeGet();
 					return _getDelegate(t);

@@ -8,13 +8,15 @@ namespace FastReflection
 	{
 		private Func<object, object> _getDelegate;
 		private Action<object, object> _setDelegate;
+		private readonly Type _declaringType;
 
 		public FastProperty(PropertyInfo property)
 		{
 			Property = property;
+			_declaringType = Property.DeclaringType;
 			CanRead = property.GetGetMethod() != null;
 			CanWrite = property.GetSetMethod() != null;
-			_getDelegate = (t) =>
+			_getDelegate = t =>
 				{
 					InitializeGet();
 					return _getDelegate(t);
@@ -41,9 +43,9 @@ namespace FastReflection
 			if (getMethod != null)
 			{
 				var instance = Expression.Parameter(typeof(object), "instance");
-				var instanceCast = (!Property.DeclaringType.IsValueType)
-				                   	? Expression.TypeAs(instance, Property.DeclaringType)
-				                   	: Expression.Convert(instance, Property.DeclaringType);
+				var instanceCast = (!_declaringType.IsValueType)
+				                   	? Expression.TypeAs(instance, _declaringType)
+									: Expression.Convert(instance, _declaringType);
 				_getDelegate =
 					Expression.Lambda<Func<object, object>>(
 						Expression.TypeAs(Expression.Call(instanceCast, getMethod), typeof(object)), instance).Compile();
@@ -59,9 +61,9 @@ namespace FastReflection
 				var value = Expression.Parameter(typeof(object), "value");
 
 				// value as T is slightly faster than (T)value, so if it's not a value type, use that
-				var instanceCast = (!Property.DeclaringType.IsValueType)
-				                   	? Expression.TypeAs(instance, Property.DeclaringType)
-				                   	: Expression.Convert(instance, Property.DeclaringType);
+				var instanceCast = (!_declaringType.IsValueType)
+									? Expression.TypeAs(instance, _declaringType)
+									: Expression.Convert(instance, _declaringType);
 				var valueCast = (!Property.PropertyType.IsValueType)
 				                	? Expression.TypeAs(value, Property.PropertyType)
 				                	: Expression.Convert(value, Property.PropertyType);
