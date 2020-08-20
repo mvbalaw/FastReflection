@@ -17,5 +17,4 @@ CommonAssemblyInfo.cs
 dist/
 !tools/NUnit/bin
 dist.bat
-settings/build.yaml
 src/.vs
