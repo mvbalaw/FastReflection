@@ -2,8 +2,8 @@ require 'albacore'
 
 PRODUCT_NAME = "FastReflection"
 DEFAULT_BUILD_NUMBER = "1.0.0"
-COMPANY_NAME = "Microsoft"
-COPYRIGHT = "Copyright (c) Microsoft 2008-2020"
+COMPANY_NAME = "MVBA, P.C."
+COPYRIGHT = "Copyright (c) Digital Business Integration 2006-2011, MVBA, P.C. 2011-2020"
 ARTIFACTS = File.expand_path("dist")
 COMPILE_TARGET = "Debug"
 STAGE = File.expand_path("build")
