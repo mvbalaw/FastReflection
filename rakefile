@@ -1,7 +1,6 @@
 require 'albacore'
 
 PRODUCT_NAME = "FastReflection"
-CLR_TOOLS_VERSION = "v4.0.30319"
 DEFAULT_BUILD_NUMBER = "1.0.0"
 COMPANY_NAME = "Microsoft"
 COPYRIGHT = "Copyright (c) Microsoft 2008-2020"
