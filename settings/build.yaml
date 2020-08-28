@@ -1,2 +1,2 @@
-# artifacts is where the zip files with the build artifacts go
+# artifacts is where the nuget package gets created.
 :artifacts: \\fsa\shares2\dev\Build Artifacts\FastReflection\master

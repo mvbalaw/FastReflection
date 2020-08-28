@@ -28,15 +28,16 @@ The build script requires Ruby with rake installed.
 
 If you do not have ruby:
 
-1. You need to create a src\CommonAssemblyInfo.cs file. Go.bat will copy src\CommonAssemblyInfo.cs.default to src\CommonAssemblyInfo.cs
 1. open src\FastReflection.sln with Visual Studio and build the solution
 
-	
-### License		
+### License
 
 [Microsoft Public License (Ms-PL)][mslicense]
 
 [FastReflectionCodePlex]: http://fastreflection.codeplex.com/
 [DarrenBlog]: http://geekswithblogs.net/Madman/Default.aspx
 [FastReflectionBlogEntry]: http://geekswithblogs.net/Madman/archive/2008/06/27/faster-reflection-using-expression-trees.aspx
+
+If you have questions or comments about this project, please contact us at <mailto:opensource@mvbalaw.com>.
+[MvbaLawGithub]: http://mvbalaw.github.io/
 [mslicense]: http://fastreflection.codeplex.com/license
