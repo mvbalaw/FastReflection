@@ -1,3 +1,4 @@
+require 'albacore'
 
 # path when build tools is installed from https://www.visualstudio.com/thank-you-downloading-visual-studio/?sku=BuildTools&rel=15
 MSBUILD1 = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\MSBuild\\Current\\Bin\\"
@@ -27,7 +28,7 @@ SETTINGS_DIR = "settings"
 beginning = Time.now
 
 default_settings = { :artifacts => ARTIFACTS, 
-                     :compile_target => COMPILE_TARGET,
+                     :compile_target => COMPILE_TARGET
                    }
 
 def read_config(settings_directory, env)
@@ -115,7 +116,7 @@ task :pack do
   puts
   puts "Creating nuget package for #{PRODUCT_NAME} in artifact folder (#{settings[:artifacts]})..."
   puts
-  sh "\"#{$MSBUILD}\" /p:PackageOutputPath=#{settings[:artifacts]} -t:pack /verbosity:quiet /nologo src/#{PRODUCT_NAME}/#{PRODUCT_NAME}.csproj"
+  sh "\"#{$MSBUILD}\" /p:PackageOutputPath=\"#{settings[:artifacts]}\" -t:pack /verbosity:quiet /nologo src/#{PRODUCT_NAME}/#{PRODUCT_NAME}.csproj"
 end
 
 def get_build_number
