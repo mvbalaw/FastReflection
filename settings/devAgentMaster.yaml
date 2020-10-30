@@ -1,3 +1,2 @@
 # artifacts is where the nuget package gets created.
-:artifacts: //fsjump/dev/Build Artifacts/FastReflection/master
-
+:artifacts: //fs-dev/Build/BuildArtifacts/FastReflection/master
